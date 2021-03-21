@@ -19,7 +19,8 @@ class RecipesCorpusReader(BaseReader):
 
     def read(self):
         doc_corpus = []
-        for line in super().read_lines():
+        id2index = {}
+        for index, line in enumerate(super().read_lines()):
             id = int(line[self.id_column])
             whole_text = "\n".join(
                 [
@@ -30,7 +31,8 @@ class RecipesCorpusReader(BaseReader):
             )
             tokens = simple_preprocess(whole_text)
             doc_corpus.append(TaggedDocument(tokens, [id]))
-        return doc_corpus
+            id2index[id] = index
+        return doc_corpus, id2index
 
 
 class NutrientsReader(BaseReader):
@@ -57,4 +59,6 @@ class NutrientsReader(BaseReader):
                 .replace("< 1", "0.05")
             )
             nutrients = json.loads(nutrient_raw)
-            yield int(line[self.id_col]), nutrients
+            yield int(line[self.id_col]), line["recipe_name"], line[
+                "ingredients"
+            ], line["cooking_directions"], nutrients

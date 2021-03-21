@@ -1,5 +1,3 @@
-import numpy as np
-import pandas as pd
 from gensim.utils import simple_preprocess
 from gensim.models.doc2vec import TaggedDocument, Doc2Vec
 import os.path
@@ -23,7 +21,9 @@ class ContentBasedRecommender:
         self.model_specs_str = f"doc2vec_c{self.corpus_id}_v{vector_size}_w{min_word_count}_e{training_epochs}"
         self.model = None
         self.corpus = None
+        self.id2index = None
         self.similarity_cache = {}
+        self.corpus_size = 0
 
     def train_or_load(self):
         default_file = f"models/{self.model_specs_str}.model"
@@ -33,7 +33,8 @@ class ContentBasedRecommender:
             self.train()
 
     def train(self, save=True):
-        self.corpus = self.reader.read()
+        self.corpus, self.id2index = self.reader.read()
+        self.corpus_size = len(self.corpus)
         self.model = Doc2Vec(
             vector_size=self.vector_size,
             min_count=self.min_word_count,
@@ -75,6 +76,7 @@ class ContentBasedRecommender:
 
     def score(self, users_data, predictions_reader, item_averages):
         err = 0
+        err2 = 0
         counter = 0
         for user_id, item_id, target_rating in predictions_reader.read_lines(
             desc="Calculating score"
@@ -86,8 +88,17 @@ class ContentBasedRecommender:
                     self.predict(item_id, user_items, user_ratings)
                     + users_data[user_id].mean
                 )
-                err += (pred - target_rating) ** 2
+                err2 += (pred - target_rating) ** 2
+                err += abs(pred - target_rating)
             else:
                 err += (item_averages[item_id] - target_rating) ** 2
             counter += 1
-        return (err / counter) ** (1 / 2)
+        return {"rmse": (err2 / counter) ** (1 / 2), "mae": (err / counter)}
+
+    def most_similar(self, document_data):
+        if self.corpus is None:
+            self.corpus, self.id2index = self.reader.read()
+            self.corpus_size = len(self.corpus)
+        x = self.model.infer_vector(document_data)
+        sim = self.model.docvecs.most_similar([x], topn=1)
+        return self.corpus[self.id2index[sim[0][0]]]

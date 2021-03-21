@@ -44,12 +44,11 @@ def main():
 
 if __name__ == "__main__":
 
-    reader = RecipesCorpusReader("inputs/core-data_recipe.csv")
+    reader = RecipesCorpusReader("inputs/healthy_recipes_20.csv")
     recommender = ContentBasedRecommender(reader, 100, 2, 25)
     recommender.train_or_load()
 
-    train_preds = PredictionsReader("inputs/core-data-train_rating.csv")
-    users, items = train_preds.read_cb()
-
-    test_preds = PredictionsReader("inputs/core-data-test_rating.csv")
-    recommender.score(users, test_preds, items)
+    # test_preds = PredictionsReader("inputs/core-data-test_rating.csv")
+    corpus, _ = RecipesCorpusReader("inputs/small-data_recipe.csv").read()
+    for doc in corpus:
+        s = recommender.most_similar(doc.words)
