@@ -133,3 +133,4 @@ inputs/
 LibRecommender/
 models/
 data.csv
+.vscode

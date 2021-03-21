@@ -7,6 +7,12 @@ from sklearn.metrics import mean_squared_error
 
 from recommenders.item2vec.item2vec_recommender import Item2VecRecommender
 from recommenders.utils.train_test_and_validation import TrainTestAndValidation
+import dask.dataframe as dd
+import json
+from recomenders.ContentBased import ContentBasedRecommender
+from readers.Recipes import RecipesCorpusReader
+from readers.Predictions import PredictionsReader
+from tqdm import tqdm
 
 try:
     from LibRecommender.libreco.algorithms import SVDpp
@@ -87,5 +93,14 @@ def main():
     print(f"MSE: {mean_squared_error(y_test, y_pred, squared=True)}")
 
 
-if __name__ == '__main__':
-    main()
+if __name__ == "__main__":
+
+    reader = RecipesCorpusReader("inputs/core-data_recipe.csv")
+    recommender = ContentBasedRecommender(reader, 100, 2, 25)
+    recommender.train_or_load()
+
+    train_preds = PredictionsReader("inputs/core-data-train_rating.csv")
+    users, items = train_preds.read_cb()
+
+    test_preds = PredictionsReader("inputs/core-data-test_rating.csv")
+    recommender.score(users, test_preds, items)
