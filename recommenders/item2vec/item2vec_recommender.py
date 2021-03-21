@@ -1,6 +1,8 @@
 import numpy as np
 from typing import Union
 
+from sklearn.metrics import mean_squared_error
+
 from recommenders.item2vec.item2vec import Item2Vec
 from pandas import DataFrame
 from tqdm import tqdm
@@ -40,8 +42,11 @@ class Item2VecRecommender:
             similarities_list = []
             rates = []
             for slave_key in main_dict[key]:
-                similarities_list.append(self.word_vector.similarity(str(subkey), str(slave_key[0])))
-                rates.append(slave_key[1])
+                try:
+                    similarities_list.append(self.word_vector.similarity(str(subkey), str(slave_key[0])))
+                    rates.append(slave_key[1])
+                except KeyError:
+                    continue
             rates = np.array(rates, dtype=np.float32)
             similarities_list = np.array(similarities_list, dtype=np.float32)
             return np.average(rates, weights=similarities_list)
@@ -54,13 +59,22 @@ class Item2VecRecommender:
             if user in self._user2index and recipe in self._recipe2index:
                 key = recipe if self._text_type == 'user' else user
                 subkey = user if self._text_type == 'user' else recipe
-                self._solution[index] = similarities(key, subkey, data_dict)
+                try:
+                    self._solution[index] = similarities(key, subkey, data_dict)
+                except ZeroDivisionError:
+                    self._solution[index] = self._item_mean_rate[recipe]
             elif user in self._user2index and recipe not in self._recipe2index:
                 self._solution[index] = self._user_mean_rate[user]
             elif user not in self._user2index and recipe in self._recipe2index:
                 self._solution[index] = self._item_mean_rate[recipe]
             else:
                 self._solution[index] = global_mean
+
+    def scores(self, y_test):
+        y_test = np.array(y_test)
+        y_pred = self.y_pred
+        print(f"RMSE: {mean_squared_error(y_test, y_pred, squared=False)}")
+        print(f"MSE: {mean_squared_error(y_test, y_pred, squared=True)}")
 
     @property
     def model(self):
