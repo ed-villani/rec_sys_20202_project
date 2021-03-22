@@ -2,7 +2,7 @@ import warnings
 
 from readers.Predictions import PredictionsReader
 from readers.Recipes import RecipesCorpusReader
-from readers.generic_readers import RawDataInteraction
+from readers.generic_readers import RawDataInteraction, CoreDataRecipe
 from recomenders.ContentBased import ContentBasedRecommender
 from recommenders.collaborative_filtering.collaborative_recommender import CollaborativeRecommender
 from recommenders.item2vec.item2vec_recommender import Item2VecRecommender
@@ -29,10 +29,17 @@ def main():
     item2vec_recommender = Item2VecRecommender(
         train_test_and_validation.train,
         load_model='models/item2vec_embeddings_rate_ge_4',
-        text_type='user'
+        text_type='recipe'3
     )
-    item2vec_recommender.evaluate(train_test_and_validation.test)
-    item2vec_recommender.scores(train_test_and_validation.test['label'])
+    # item2vec_recommender.evaluate(train_test_and_validation.test)
+    cdr = CoreDataRecipe(nrows=10)
+    import numpy as np
+    cdr = np.array(cdr()[['recipe_id', 'recipe_name']])
+    for recipe in cdr:
+        print(f'Substitute: {recipe} for:')
+        print(item2vec_recommender.health_food_recommender(str(recipe[0]), topn=3))
+        print('---'*10)
+    # item2vec_recommender.scores(train_test_and_validation.test['label'])
 
     # reader = RecipesCorpusReader("inputs/core-data_recipe.csv")
     # recommender = ContentBasedRecommender(reader, 100, 2, 25)

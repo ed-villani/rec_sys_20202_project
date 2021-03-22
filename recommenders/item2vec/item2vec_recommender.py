@@ -76,6 +76,23 @@ class Item2VecRecommender:
         print(f"RMSE: {mean_squared_error(y_test, y_pred, squared=False)}")
         print(f"MSE: {mean_squared_error(y_test, y_pred, squared=True)}")
 
+    def health_food_recommender(self, x, topn=1):
+        import pandas as pd
+        health_recipes = pd.read_csv('inputs/healthy_recipes_20.csv')
+        recipes_ids = np.array(health_recipes['recipe_id'])
+        recipes_names = np.array(health_recipes['recipe_name'])
+        all_similarities = self.word_vector.most_similar(x, topn=1 * 10 ** 6)
+        result = []
+        for index, s in enumerate(all_similarities):
+            if int(s[0]) in recipes_ids:
+                result_id = s[0]
+                result_similarity = s[1]
+                result_name = recipes_names[index]
+                result.append((int(result_id), result_similarity, result_name))
+            if len(result) == topn:
+                break
+        return result
+
     @property
     def model(self):
         return self._model
