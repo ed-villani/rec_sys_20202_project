@@ -29,7 +29,7 @@ def main():
     item2vec_recommender = Item2VecRecommender(
         train_test_and_validation.train,
         load_model='models/item2vec_embeddings_rate_ge_4',
-        text_type='recipe'3
+        text_type='recipe'
     )
     # item2vec_recommender.evaluate(train_test_and_validation.test)
     cdr = CoreDataRecipe(nrows=10)
